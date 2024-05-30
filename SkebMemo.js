@@ -46,13 +46,16 @@
         textBox.style.height = '200px';
         textBox.style.marginBottom = '10px';
         textBox.style.resize = 'vertical'; // 只能上下调整大小
+        textBox.style.fontFamily = 'Microsoft Yahei';
+        textBox.style.fontSize = '20px';
         container.appendChild(textBox);
 
         // 创建查看笔记按钮
         var viewNotesButton = document.createElement('button');
         viewNotesButton.textContent = '查看所有笔记';
         viewNotesButton.style.fontFamily = 'Microsoft Yahei';
-        // viewNotesButton.style.marginRight = '10px';
+        viewNotesButton.style.fontSize = '20px';
+        viewNotesButton.style.marginBottom = '10px';
         container.appendChild(viewNotesButton);
 
         // 使用 flexbox 布局
@@ -107,6 +110,8 @@
             searchInput.style.width = '100%';
             searchInput.style.marginBottom = '10px';
             searchInput.style.fontFamily = 'Microsoft Yahei';
+            searchInput.style.border = '1px solid #ccc'; // 添加边框样式
+            searchInput.style.padding = '5px'; // 添加内边距以增强可视性
             notesList.appendChild(searchInput);
 
             var notesContainer = document.createElement('div');
@@ -145,8 +150,9 @@
             document.body.appendChild(notesList);
 
             var currentPage = 1;
-            var notesPerPage = 2;
+            var notesPerPage = 10;
             var filteredNotes = Object.keys(notes).filter(id => notes[id].includes(''));
+            // var filteredNotes = Object.keys(notes).filter(id => notes[id].includes('')).reverse();
             var maxVisiblePages = 7;
 
             function renderNotes(filter = '') {
@@ -154,12 +160,13 @@
                 paginationContainer.innerHTML = '';
                 filteredNotes = Object.keys(notes).filter(id => notes[id].includes(filter));
                 var totalPages = Math.ceil(filteredNotes.length / notesPerPage);
-
+            
                 function createPageButton(page, text) {
                     let pageButton = document.createElement('button');
                     pageButton.textContent = text;
                     pageButton.style.margin = '0 5px';
                     pageButton.style.fontFamily = 'Microsoft Yahei';
+                    pageButton.style.border = 'none'; // 移除边框
                     if (page === currentPage) {
                         pageButton.disabled = true;
                         pageButton.style.fontWeight = 'bold';
@@ -171,36 +178,40 @@
                     }
                     paginationContainer.appendChild(pageButton);
                 }
-
+            
                 if (totalPages > 1) {
+                    createPageButton(1, '首'); // 添加首页按钮
+            
                     if (currentPage > 1) {
                         createPageButton(currentPage - 1, '<');
                     }
-
+            
                     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
+            
                     if (endPage - startPage + 1 < maxVisiblePages) {
                         startPage = Math.max(1, endPage - maxVisiblePages + 1);
                     }
-
+            
                     for (let i = startPage; i <= endPage; i++) {
                         createPageButton(i, i);
                     }
-
+            
                     if (currentPage < totalPages) {
                         createPageButton(currentPage + 1, '>');
                     }
+            
+                    createPageButton(totalPages, '末'); // 添加最后一页按钮
                 }
-
+            
                 var start = (currentPage - 1) * notesPerPage;
                 var end = start + notesPerPage;
-                var notesToDisplay = filteredNotes.slice(start, end);
-
+                var notesToDisplay = filteredNotes.slice(start, end).reverse(); // 倒序显示笔记
+            
                 for (var id of notesToDisplay) {
                     var noteItem = document.createElement('div');
                     noteItem.style.display = 'contents';
-
+            
                     var noteID = document.createElement('a');
                     noteID.href = `https://skeb.jp/${id}`;
                     noteID.textContent = id;
@@ -209,17 +220,19 @@
                     noteID.style.color = 'blue';
                     noteID.style.fontFamily = 'Microsoft Yahei';
                     notesContainer.appendChild(noteID);
-
+            
                     var noteText = document.createElement('div');
                     noteText.textContent = notes[id];
                     noteText.style.fontFamily = 'Microsoft Yahei';
                     notesContainer.appendChild(noteText);
-
+            
                     var deleteButton = document.createElement('button');
                     deleteButton.textContent = '删除';
                     deleteButton.style.marginLeft = '10px';
                     deleteButton.style.float = 'right';
                     deleteButton.style.fontFamily = 'Microsoft Yahei';
+                    deleteButton.style.padding = '1px 1px'; // 调整按钮的左右宽度
+                    deleteButton.style.fontWeight = 'bold'; // 加粗按钮文字
                     deleteButton.addEventListener('click', function(id) {
                         return function() {
                             delete notes[id];
@@ -228,6 +241,14 @@
                         };
                     }(id));
                     notesContainer.appendChild(deleteButton);
+
+                    // 添加分割线
+                    // var hr = document.createElement('hr');
+                    // hr.style.width = '100%';
+                    // hr.style.border = 'none';
+                    // hr.style.borderTop = '1px solid #ccc'; // 设置分割线样式
+                    // hr.style.margin = '10px 0'; // 设置上下间距
+                    // notesContainer.appendChild(hr);
                 }
             }
 

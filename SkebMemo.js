@@ -38,7 +38,7 @@
 
         container.style.marginTop = '20px';
         targetDiv.parentNode.insertBefore(container, targetDiv.nextSibling);
-        
+
         // 创建文本框元素
         var textBox = document.createElement('textarea');
         textBox.id = 'myTextBox';
@@ -47,18 +47,18 @@
         textBox.style.marginBottom = '10px';
         textBox.style.resize = 'vertical'; // 只能上下调整大小
         container.appendChild(textBox);
-        
+
         // 创建查看笔记按钮
         var viewNotesButton = document.createElement('button');
         viewNotesButton.textContent = '查看所有笔记';
         viewNotesButton.style.fontFamily = 'Microsoft Yahei';
         // viewNotesButton.style.marginRight = '10px';
         container.appendChild(viewNotesButton);
-        
+
         // 使用 flexbox 布局
         container.style.display = 'flex';
         container.style.flexDirection = 'column'; // 设置为列布局
-        container.style.alignItems = 'flex-end'; // 将子元素对齐到右边        
+        container.style.alignItems = 'flex-end'; // 将子元素对齐到右边
 
         // 加载保存的内容
         textBox.value = notes[pageID] || '';
@@ -94,30 +94,28 @@
             notesList.style.boxShadow = '0px 0px 10px rgba(0,0,0,0.5)';
             notesList.style.fontFamily = 'Microsoft Yahei';
             notesList.id = 'notesList';
-        
+
             var header = document.createElement('h2');
             header.textContent = '笔记列表';
-            // header.style.marginBottom = '10px';
             header.style.textAlign = 'center';
             header.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(header);
-        
+
             var searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = '搜索笔记';
             searchInput.style.width = '100%';
             searchInput.style.marginBottom = '10px';
-            // searchInput.style.marginTop = '10px';
             searchInput.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(searchInput);
-        
+
             var notesContainer = document.createElement('div');
             notesContainer.style.display = 'grid';
             notesContainer.style.gridTemplateColumns = '1fr 3fr 1fr';
             notesContainer.style.gap = '10px';
             notesContainer.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(notesContainer);
-        
+
             var exportNotesButton = document.createElement('button');
             exportNotesButton.textContent = '导出笔记';
             exportNotesButton.style.position = 'absolute';
@@ -125,7 +123,7 @@
             exportNotesButton.style.left = '10px';
             exportNotesButton.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(exportNotesButton);
-        
+
             var closeButton = document.createElement('button');
             closeButton.textContent = 'X';
             closeButton.style.position = 'absolute';
@@ -136,53 +134,110 @@
                 document.body.removeChild(notesList);
             });
             notesList.appendChild(closeButton);
-        
+
+            var paginationContainer = document.createElement('div');
+            paginationContainer.style.display = 'flex';
+            paginationContainer.style.justifyContent = 'center';
+            paginationContainer.style.marginTop = '10px';
+            paginationContainer.style.fontFamily = 'Microsoft Yahei';
+            notesList.appendChild(paginationContainer);
+
             document.body.appendChild(notesList);
-        
+
+            var currentPage = 1;
+            var notesPerPage = 2;
+            var filteredNotes = Object.keys(notes).filter(id => notes[id].includes(''));
+            var maxVisiblePages = 7;
+
             function renderNotes(filter = '') {
                 notesContainer.innerHTML = '';
-                for (var id in notes) {
-                    if (notes.hasOwnProperty(id) && notes[id].includes(filter)) {
-                        var noteItem = document.createElement('div');
-                        noteItem.style.display = 'contents';
-        
-                        var noteID = document.createElement('a');
-                        noteID.href = `https://skeb.jp/${id}`;
-                        noteID.textContent = id;
-                        noteID.target = '_blank';
-                        noteID.style.textDecoration = 'none';
-                        noteID.style.color = 'blue';
-                        noteID.style.fontFamily = 'Microsoft Yahei';
-                        notesContainer.appendChild(noteID);
-        
-                        var noteText = document.createElement('div');
-                        noteText.textContent = notes[id];
-                        noteText.style.fontFamily = 'Microsoft Yahei';
-                        notesContainer.appendChild(noteText);
-        
-                        var deleteButton = document.createElement('button');
-                        deleteButton.textContent = '删除';
-                        deleteButton.style.marginLeft = '10px';
-                        deleteButton.style.float = 'right';
-                        deleteButton.style.fontFamily = 'Microsoft Yahei';
-                        deleteButton.addEventListener('click', function(id) {
-                            return function() {
-                                delete notes[id];
-                                localStorage.setItem('notes', JSON.stringify(notes));
-                                renderNotes(filter);
-                            };
-                        }(id));
-                        notesContainer.appendChild(deleteButton);
+                paginationContainer.innerHTML = '';
+                filteredNotes = Object.keys(notes).filter(id => notes[id].includes(filter));
+                var totalPages = Math.ceil(filteredNotes.length / notesPerPage);
+
+                function createPageButton(page, text) {
+                    let pageButton = document.createElement('button');
+                    pageButton.textContent = text;
+                    pageButton.style.margin = '0 5px';
+                    pageButton.style.fontFamily = 'Microsoft Yahei';
+                    if (page === currentPage) {
+                        pageButton.disabled = true;
+                        pageButton.style.fontWeight = 'bold';
+                    } else {
+                        pageButton.addEventListener('click', function() {
+                            currentPage = page;
+                            renderNotes(filter);
+                        });
+                    }
+                    paginationContainer.appendChild(pageButton);
+                }
+
+                if (totalPages > 1) {
+                    if (currentPage > 1) {
+                        createPageButton(currentPage - 1, '<');
+                    }
+
+                    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                    if (endPage - startPage + 1 < maxVisiblePages) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                    }
+
+                    for (let i = startPage; i <= endPage; i++) {
+                        createPageButton(i, i);
+                    }
+
+                    if (currentPage < totalPages) {
+                        createPageButton(currentPage + 1, '>');
                     }
                 }
+
+                var start = (currentPage - 1) * notesPerPage;
+                var end = start + notesPerPage;
+                var notesToDisplay = filteredNotes.slice(start, end);
+
+                for (var id of notesToDisplay) {
+                    var noteItem = document.createElement('div');
+                    noteItem.style.display = 'contents';
+
+                    var noteID = document.createElement('a');
+                    noteID.href = `https://skeb.jp/${id}`;
+                    noteID.textContent = id;
+                    noteID.target = '_blank';
+                    noteID.style.textDecoration = 'none';
+                    noteID.style.color = 'blue';
+                    noteID.style.fontFamily = 'Microsoft Yahei';
+                    notesContainer.appendChild(noteID);
+
+                    var noteText = document.createElement('div');
+                    noteText.textContent = notes[id];
+                    noteText.style.fontFamily = 'Microsoft Yahei';
+                    notesContainer.appendChild(noteText);
+
+                    var deleteButton = document.createElement('button');
+                    deleteButton.textContent = '删除';
+                    deleteButton.style.marginLeft = '10px';
+                    deleteButton.style.float = 'right';
+                    deleteButton.style.fontFamily = 'Microsoft Yahei';
+                    deleteButton.addEventListener('click', function(id) {
+                        return function() {
+                            delete notes[id];
+                            localStorage.setItem('notes', JSON.stringify(notes));
+                            renderNotes(filter);
+                        };
+                    }(id));
+                    notesContainer.appendChild(deleteButton);
+                }
             }
-        
+
             searchInput.addEventListener('input', function() {
+                currentPage = 1;
                 renderNotes(searchInput.value);
             });
-        
+
             renderNotes();
-        
+
             exportNotesButton.addEventListener('click', function() {
                 var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes, null, 2));
                 var downloadAnchorNode = document.createElement('a');
@@ -192,8 +247,8 @@
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
             });
-        });        
-    }        
+        });
+    }
 
     function add_observer() {
         let body = document.body;

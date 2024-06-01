@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
@@ -145,19 +145,6 @@
         languageLabel.style.fontFamily = fontCJE;
         settingsDiv.appendChild(languageLabel);
 
-        let enRadio = document.createElement('input');
-        enRadio.type = 'radio';
-        enRadio.name = 'SkebMemoLang';
-        enRadio.value = 'en';
-        enRadio.id = 'enRadio';
-        if (currentLanguage === 'en') enRadio.checked = true;
-
-        let enLabel = document.createElement('label');
-        enLabel.textContent = 'English';
-        enLabel.style.marginRight = '10px';
-        enLabel.htmlFor = 'enRadio';
-        enLabel.style.fontFamily = 'Arial, sans-serif';
-
         let cnRadio = document.createElement('input');
         cnRadio.type = 'radio';
         cnRadio.name = 'SkebMemoLang';
@@ -169,6 +156,18 @@
         cnLabel.style.marginRight = '10px';
         cnLabel.htmlFor = 'cnRadio';
         cnLabel.style.fontFamily = 'Microsoft Yahei, SimHei, sans-serif';
+
+        let enRadio = document.createElement('input');
+        enRadio.type = 'radio';
+        enRadio.name = 'SkebMemoLang';
+        enRadio.value = 'en';
+        enRadio.id = 'enRadio';
+
+        let enLabel = document.createElement('label');
+        enLabel.textContent = 'English';
+        enLabel.style.marginRight = '10px';
+        enLabel.htmlFor = 'enRadio';
+        enLabel.style.fontFamily = 'Arial, sans-serif';
 
         let jpRadio = document.createElement('input');
         jpRadio.type = 'radio';

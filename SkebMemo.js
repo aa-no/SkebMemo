@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.1.1
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
@@ -11,6 +11,8 @@
 
 (function () {
     'use strict';
+
+    let fontCJE = 'Microsoft Yahei, SimHei, Noto Sans JP, Arial, sans-serif';
 
     function handleExportNotes() {
         let notes = JSON.parse(localStorage.getItem('notes') || '{}');
@@ -110,7 +112,11 @@
     };
 
     function openSettings() {
+        if (document.querySelector('.SkebMemoSettings')) {
+            return;
+        }
         let settingsDiv = document.createElement("div");
+        settingsDiv.className = 'SkebMemoSettings';
         settingsDiv.style.position = "fixed";
         settingsDiv.style.top = "50%";
         settingsDiv.style.left = "50%";
@@ -123,13 +129,14 @@
         let header = document.createElement('h2');
         header.textContent = languages[currentLanguage].settings;
         header.style.textAlign = 'center';
-        header.style.fontFamily = 'Microsoft Yahei';
+        header.style.fontFamily = fontCJE;
         settingsDiv.appendChild(header);
 
         let languageLabel = document.createElement('label');
         languageLabel.textContent = languages[currentLanguage].language;
         languageLabel.style.display = 'block';
         languageLabel.style.marginBottom = '10px';
+        languageLabel.style.fontFamily = fontCJE;
         settingsDiv.appendChild(languageLabel);
 
         let enRadio = document.createElement('input');
@@ -143,6 +150,7 @@
         enLabel.textContent = 'English';
         enLabel.style.marginRight = '10px';
         enLabel.htmlFor = 'enRadio';
+        enLabel.style.fontFamily = 'Arial, sans-serif';
 
         let cnRadio = document.createElement('input');
         cnRadio.type = 'radio';
@@ -154,6 +162,7 @@
         cnLabel.textContent = '中文';
         cnLabel.style.marginRight = '10px';
         cnLabel.htmlFor = 'cnRadio';
+        cnLabel.style.fontFamily = 'Microsoft Yahei, SimHei, sans-serif';
 
         let jpRadio = document.createElement('input');
         jpRadio.type = 'radio';
@@ -165,6 +174,7 @@
         jpLabel.textContent = '日本語';
         jpLabel.style.marginRight = '10px';
         jpLabel.htmlFor = 'jpRadio';
+        jpLabel.style.fontFamily = 'Noto Sans JP, sans-serif';
 
         settingsDiv.appendChild(enRadio);
         settingsDiv.appendChild(enLabel);
@@ -177,11 +187,12 @@
         notesPerPageLabel.textContent = languages[currentLanguage].notesPerPage;
         notesPerPageLabel.style.display = 'block';
         notesPerPageLabel.style.marginTop = '20px';
+        notesPerPageLabel.style.fontFamily = fontCJE;
         settingsDiv.appendChild(notesPerPageLabel);
 
         let notesPerPageInput = document.createElement('input');
         notesPerPageInput.type = 'number';
-        notesPerPageInput.value = notesPerPage;
+        notesPerPageInput.value = notesPerPage || 10;
         notesPerPageInput.min = '1';
         notesPerPageInput.style.width = '100%';
         notesPerPageInput.style.marginBottom = '10px';
@@ -192,20 +203,20 @@
         exportNotesButton.textContent = languages[currentLanguage].exportNotes;
         exportNotesButton.style.marginBottom = '10px';
         exportNotesButton.style.marginRight = '10px';
-        exportNotesButton.style.fontFamily = 'Microsoft Yahei';
+        exportNotesButton.style.fontFamily = fontCJE;
         settingsDiv.appendChild(exportNotesButton);
 
         let importNotesButton = document.createElement('button');
         importNotesButton.textContent = languages[currentLanguage].importNotes;
         importNotesButton.style.marginBottom = '10px';
         importNotesButton.style.marginRight = '10px';
-        importNotesButton.style.fontFamily = 'Microsoft Yahei';
+        importNotesButton.style.fontFamily = fontCJE;
         settingsDiv.appendChild(importNotesButton);
 
         let clearNotesButton = document.createElement('button');
         clearNotesButton.textContent = languages[currentLanguage].clearNotes;
         clearNotesButton.style.marginBottom = '10px';
-        clearNotesButton.style.fontFamily = 'Microsoft Yahei';
+        clearNotesButton.style.fontFamily = fontCJE;
         settingsDiv.appendChild(clearNotesButton);
 
         document.body.appendChild(settingsDiv);
@@ -294,10 +305,14 @@
             console.error('SkebMemo: .is-box not found.');
             return;
         }
-
+        
+        // let divbox = document.createElement('div');
+        // divbox.className = 'is-box';
         let container = document.createElement('div');
-
         container.style.marginTop = '20px';
+        container.className = 'is-box';
+
+        // divbox.appendChild(container);
         targetDiv.parentNode.insertBefore(container, targetDiv.nextSibling);
 
         // Create text box
@@ -307,21 +322,38 @@
         textBox.style.height = '200px';
         textBox.style.marginBottom = '10px';
         textBox.style.resize = 'vertical';
-        textBox.style.fontFamily = 'Microsoft Yahei';
-        textBox.style.fontSize = '20px';
+        textBox.style.fontFamily = fontCJE;
+        textBox.style.fontSize = '15px';
         container.appendChild(textBox);
 
         let viewNotesButton = document.createElement('button');
         viewNotesButton.textContent = languages[currentLanguage].viewNotes;;
-        viewNotesButton.style.fontFamily = 'Microsoft Yahei';
-        viewNotesButton.style.fontSize = '20px';
+        viewNotesButton.style.fontFamily = fontCJE;
+        viewNotesButton.style.fontSize = '15px';
         viewNotesButton.style.marginBottom = '10px';
+        viewNotesButton.style.backgroundColor = '#28837f';
+        viewNotesButton.style.padding = '3px 1em'
+        viewNotesButton.style.borderColor = 'transparent';
+        viewNotesButton.style.borderRadius = '4px';
+        viewNotesButton.style.color = 'white';
+        viewNotesButton.addEventListener('mouseover', function() {
+            viewNotesButton.style.backgroundColor = '#257976';
+        });
+        viewNotesButton.addEventListener('mouseout', function() {
+            viewNotesButton.style.backgroundColor = '#28837f';
+        });
+        viewNotesButton.addEventListener('mousedown', function() {
+            viewNotesButton.style.backgroundColor = '#226F6C';
+        });
+        viewNotesButton.addEventListener('mouseup', function() {
+            viewNotesButton.style.backgroundColor = '#28837f';
+        });
         container.appendChild(viewNotesButton);
 
         // Use flexbox to align items
         container.style.display = 'flex';
-        container.style.flexDirection = 'column'; // 设置为列布局
-        container.style.alignItems = 'flex-end'; // 将子元素对齐到右边
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'flex-end';
 
         // Load notes from local storage
         textBox.value = notes[pageID] || '';
@@ -342,7 +374,11 @@
 
         // View all notes
         viewNotesButton.addEventListener('click', function () {
+            if (document.querySelector('.notesList')) {
+                return;
+            }
             let notesList = document.createElement('div');
+            notesList.className = 'notesList';
             notesList.style.position = 'fixed';
             notesList.style.top = '50%';
             notesList.style.left = '50%';
@@ -355,21 +391,21 @@
             notesList.style.border = '1px solid black';
             notesList.style.padding = '20px';
             notesList.style.boxShadow = '0px 0px 10px rgba(0,0,0,0.5)';
-            notesList.style.fontFamily = 'Microsoft Yahei';
+            notesList.style.fontFamily = fontCJE;
             notesList.id = 'notesList';
 
             let header = document.createElement('h2');
             header.textContent = languages[currentLanguage].notesList;
             header.style.textAlign = 'center';
-            header.style.fontFamily = 'Microsoft Yahei';
+            header.style.fontFamily = fontCJE;
             notesList.appendChild(header);
 
             let searchInput = document.createElement('input');
             searchInput.type = 'text';
-            searchInput.placeholder = '搜索笔记';
+            searchInput.placeholder = languages[currentLanguage].searchNotes;
             searchInput.style.width = '100%';
             searchInput.style.marginBottom = '10px';
-            searchInput.style.fontFamily = 'Microsoft Yahei';
+            searchInput.style.fontFamily = fontCJE;
             searchInput.style.border = '1px solid #ccc';
             searchInput.style.padding = '5px';
             notesList.appendChild(searchInput);
@@ -378,7 +414,7 @@
             notesContainer.style.display = 'grid';
             notesContainer.style.gridTemplateColumns = '3fr 12fr 1fr';
             notesContainer.style.gap = '10px';
-            notesContainer.style.fontFamily = 'Microsoft Yahei';
+            notesContainer.style.fontFamily = fontCJE;
             notesList.appendChild(notesContainer);
 
             let buttonContainer = document.createElement('div');
@@ -392,28 +428,28 @@
             let exportNotesButton = document.createElement('button');
             exportNotesButton.textContent = languages[currentLanguage].exportNotes;
             exportNotesButton.style.marginRight = '10px';
-            exportNotesButton.style.fontFamily = 'Microsoft Yahei';
+            exportNotesButton.style.fontFamily = fontCJE;
             buttonContainer.appendChild(exportNotesButton);
 
             // Import notes button
             let importNotesButton = document.createElement('button');
             importNotesButton.textContent = languages[currentLanguage].importNotes;
             importNotesButton.style.marginRight = '10px';
-            importNotesButton.style.fontFamily = 'Microsoft Yahei';
+            importNotesButton.style.fontFamily = fontCJE;
             buttonContainer.appendChild(importNotesButton);
 
             // Remove all notes button
             let clearNotesButton = document.createElement('button');
             clearNotesButton.textContent = languages[currentLanguage].clearNotes;
             clearNotesButton.style.marginRight = '10px';
-            clearNotesButton.style.fontFamily = 'Microsoft Yahei';
+            clearNotesButton.style.fontFamily = fontCJE;
             buttonContainer.appendChild(clearNotesButton);
 
             // Setting button
             let settingButton = document.createElement('button');
             settingButton.textContent = languages[currentLanguage].settings;
             settingButton.style.marginRight = '10px';
-            settingButton.style.fontFamily = 'Microsoft Yahei';
+            settingButton.style.fontFamily = fontCJE;
             buttonContainer.appendChild(settingButton);
 
             let closeButton = document.createElement("span");
@@ -432,7 +468,7 @@
             paginationContainer.style.display = 'flex';
             paginationContainer.style.justifyContent = 'center';
             paginationContainer.style.marginTop = '10px';
-            paginationContainer.style.fontFamily = 'Microsoft Yahei';
+            paginationContainer.style.fontFamily = fontCJE;
             notesList.appendChild(paginationContainer);
 
             document.body.appendChild(notesList);
@@ -451,7 +487,7 @@
                     let pageButton = document.createElement('button');
                     pageButton.textContent = text;
                     pageButton.style.margin = '0 5px';
-                    pageButton.style.fontFamily = 'Microsoft Yahei';
+                    pageButton.style.fontFamily = fontCJE;
                     pageButton.style.border = 'none'; // Remove border
                     if (page === currentPage) {
                         pageButton.disabled = true;
@@ -504,19 +540,19 @@
                     noteID.target = '_blank';
                     noteID.style.textDecoration = 'none';
                     noteID.style.color = 'blue';
-                    noteID.style.fontFamily = 'Microsoft Yahei';
+                    noteID.style.fontFamily = fontCJE;
                     notesContainer.appendChild(noteID);
 
                     let noteText = document.createElement('div');
                     noteText.textContent = notes[id];
-                    noteText.style.fontFamily = 'Microsoft Yahei';
+                    noteText.style.fontFamily = fontCJE;
                     notesContainer.appendChild(noteText);
 
                     let deleteButton = document.createElement('button');
                     deleteButton.textContent = languages[currentLanguage].delete;
                     deleteButton.style.marginLeft = '10px';
                     deleteButton.style.float = 'right';
-                    deleteButton.style.fontFamily = 'Microsoft Yahei';
+                    deleteButton.style.fontFamily = fontCJE;
                     deleteButton.style.padding = '1px 1px';
                     deleteButton.style.fontWeight = 'bold';
                     deleteButton.style.alignSelf = 'center'

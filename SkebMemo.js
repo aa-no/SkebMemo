@@ -432,8 +432,8 @@
             notesList.style.top = '50%';
             notesList.style.left = '50%';
             notesList.style.transform = 'translate(-50%, -50%)';
-            notesList.style.width = '60%';
-            notesList.style.height = '70%';
+            notesList.style.width = '80%';
+            notesList.style.height = '80%';
             notesList.style.overflow = 'auto';
             notesList.style.backgroundColor = 'white';
             notesList.style.zIndex = '1000';

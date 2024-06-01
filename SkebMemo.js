@@ -75,6 +75,7 @@
             notesPerPage: 'Notes per page',
             firstPage: 'First',
             lastPage: 'Last',
+            boxComment: 'The memo will be saved for this illustrator.'
         },
         cn: {
             viewNotes: '查看所有笔记',
@@ -92,7 +93,8 @@
             language: '语言',
             notesPerPage: '每页显示笔记数',
             firstPage: '首',
-            lastPage: '末'
+            lastPage: '末',
+            boxComment: '笔记内容将为此画师保存。'
         },
         jp: {
             viewNotes: 'メモ一覧',
@@ -110,7 +112,8 @@
             language: '言語',
             notesPerPage: 'ページごとのメモ数',
             firstPage: '最初',
-            lastPage: '最後'
+            lastPage: '最後',
+            boxComment: 'このメモはイラストレーターに保存されます。'
         }
     };
 
@@ -179,10 +182,10 @@
         jpLabel.htmlFor = 'jpRadio';
         jpLabel.style.fontFamily = 'Noto Sans JP, sans-serif';
 
-        settingsDiv.appendChild(enRadio);
-        settingsDiv.appendChild(enLabel);
         settingsDiv.appendChild(cnRadio);
         settingsDiv.appendChild(cnLabel);
+        settingsDiv.appendChild(enRadio);
+        settingsDiv.appendChild(enLabel);
         settingsDiv.appendChild(jpRadio);
         settingsDiv.appendChild(jpLabel);
 
@@ -297,6 +300,30 @@
         let segments = urlPath.split('/');
         let pageID = segments.find(segment => segment.startsWith('@'));
 
+        let nickname = '';
+        setTimeout(function() {
+            try {
+                // if (document.title.includes(' | Skeb') && document.title.includes('by ')) {
+                //     nickname = document.title.split('by ')[1].split(' | Skeb')[0].trim();
+                // } else {
+                //     if (document.title.includes(' (@')) {
+                //         nickname = document.title.split(' (@')[0].trim();
+                //     } else {
+                //         console.log(document.title)
+                //         console.log(document.querySelector('.title.is-5'))
+                //     }
+                // }
+                if (window.location.pathname.includes('/works/')) {
+                    nickname = document.querySelector('.title.is-5').textContent.trim();
+                } else {
+                    nickname = document.querySelector('.title.is-4').textContent.trim();
+                }
+            } catch (error) {
+                console.error('SkebMemo: Error extracting nickname:', error);
+                nickname = '';
+            }
+        }, 100);
+    
         if (!pageID) {
             console.warn('SkebMemo: Not a user page.');
             return;
@@ -337,7 +364,7 @@
         viewNotesButton.textContent = languages[currentLanguage].viewNotes;;
         viewNotesButton.style.fontFamily = fontCJE;
         viewNotesButton.style.fontSize = '15px';
-        viewNotesButton.style.marginBottom = '10px';
+        viewNotesButton.style.marginBottom = '0px';
         viewNotesButton.style.backgroundColor = '#28837f';
         viewNotesButton.style.padding = '3px 1em'
         viewNotesButton.style.borderColor = 'transparent';
@@ -357,13 +384,30 @@
         });
         container.appendChild(viewNotesButton);
 
+        if (window.location.pathname.includes('/works/')) {
+            container.style.position = 'relative'
+            let explaination = document.createElement('div');
+            explaination.textContent = languages[currentLanguage].boxComment;
+            explaination.style.fontFamily = fontCJE;
+            explaination.style.fontSize = '13px';
+            explaination.style.color = '#c5c5c5';
+            explaination.style.position = 'absolute';
+            explaination.style.bottom = '30px';
+            explaination.style.left = '20px';
+            container.appendChild(explaination);
+        }
+
         // Use flexbox to align items
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
         container.style.alignItems = 'flex-end';
 
         // Load notes from local storage
-        textBox.value = notes[pageID] || '';
+        try {
+            textBox.value = notes[pageID].memo || '';
+        } catch (error) {
+            textBox.value = ''; // No memo
+        }
 
         // Save notes to local storage
         // textBox.addEventListener('input', function() {
@@ -374,7 +418,10 @@
             if (textBox.value.trim() === '') {
                 delete notes[pageID];
             } else {
-                notes[pageID] = textBox.value;
+                notes[pageID] = {
+                    memo: textBox.value,
+                    name: nickname
+                };
             }
             localStorage.setItem('notes', JSON.stringify(notes));
         });
@@ -419,7 +466,7 @@
 
             let notesContainer = document.createElement('div');
             notesContainer.style.display = 'grid';
-            notesContainer.style.gridTemplateColumns = '3fr 12fr 1fr';
+            notesContainer.style.gridTemplateColumns = '3fr 3fr 12fr 1fr';
             notesContainer.style.gap = '10px';
             notesContainer.style.fontFamily = fontCJE;
             notesList.appendChild(notesContainer);
@@ -481,13 +528,13 @@
             document.body.appendChild(notesList);
 
             let currentPage = 1;
-            let filteredNotes = Object.keys(notes).filter(id => notes[id].includes(''));
+            let filteredNotes = Object.keys(notes).filter(id => notes[id].memo.includes(''));
             let maxVisiblePages = 7;
 
             function renderNotes(filter = '') {
                 notesContainer.innerHTML = '';
                 paginationContainer.innerHTML = '';
-                filteredNotes = Object.keys(notes).filter(id => notes[id].includes(filter));
+                filteredNotes = Object.keys(notes).filter(id => notes[id].memo.includes(filter));
                 let totalPages = Math.ceil(filteredNotes.length / notesPerPage);
 
                 function createPageButton(page, text) {
@@ -550,8 +597,16 @@
                     noteID.style.fontFamily = fontCJE;
                     notesContainer.appendChild(noteID);
 
+                    let noteName = document.createElement('a');
+                    // noteName.href = `https://skeb.jp/${id}`;
+                    noteName.textContent = notes[id].name;
+                    // noteName.target = '_blank';
+                    // noteName.style.textDecoration = 'none';
+                    noteName.style.fontFamily = fontCJE;
+                    notesContainer.appendChild(noteName);
+
                     let noteText = document.createElement('div');
-                    noteText.textContent = notes[id];
+                    noteText.textContent = notes[id].memo;
                     noteText.style.fontFamily = fontCJE;
                     noteText.style.whiteSpace = 'pre-wrap';
                     notesContainer.appendChild(noteText);

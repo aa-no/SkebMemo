@@ -1,22 +1,284 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  Save memo for user at skeb.jp
+// @version      1.1
+// @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
-// @grant        none
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=skeb.jp
+// @grant        GM_registerMenuCommand
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
+    function handleExportNotes() {
+        let notes = JSON.parse(localStorage.getItem('notes') || '{}');
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes, null, 2));
+        let downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "notes.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    };
+
+    function handleImportNotes() {
+        let input = document.createElement('input');
+        let notes = JSON.parse(localStorage.getItem('notes') || '{}');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none';
+        input.addEventListener('change', function (event) {
+            let file = event.target.files[0];
+            if (file) {
+                let reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        let importedNotes = JSON.parse(e.target.result);
+                        // Merge imported notes with existing notes
+                        notes = { ...notes, ...importedNotes };
+                        localStorage.setItem('notes', JSON.stringify(notes));
+                        alert(languages[currentLanguage].importSuccess);
+                        notes = JSON.parse(localStorage.getItem('notes') || '{}');
+                    } catch (error) {
+                        console.error('SkebMemo: Error parsing imported JSON.', error);
+                        alert(languages[currentLanguage].importError);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        input.click();
+    };
+
+    const languages = {
+        en: {
+            viewNotes: 'Show Notes',
+            exportNotes: 'Export Notes',
+            importNotes: 'Import Notes',
+            clearNotes: 'Remove All Notes',
+            notesList: 'Notes List',
+            searchNotes: 'Search Notes',
+            delete: 'Delete',
+            confirmClear: 'Are you sure you want to remove all notes? This action cannot be undone.',
+            notesCleared: 'All notes have been removed.',
+            importSuccess: 'Notes imported successfully!',
+            importError: 'Import failed, please check if the file format is correct.',
+            settings: 'Settings',
+            language: 'Language',
+            notesPerPage: 'Notes per Page',
+            firstPage: 'First',
+            lastPage: 'Last',
+        },
+        cn: {
+            viewNotes: '查看所有笔记',
+            exportNotes: '导出笔记',
+            importNotes: '导入笔记',
+            clearNotes: '清空笔记',
+            notesList: '笔记列表',
+            searchNotes: '搜索笔记',
+            delete: '删除',
+            confirmClear: '确定要清空所有笔记吗？此操作不可恢复。',
+            notesCleared: '所有笔记已清空。',
+            importSuccess: '笔记导入成功！',
+            importError: '导入失败，请检查文件格式是否正确。',
+            settings: '设置',
+            language: '语言',
+            notesPerPage: '每页显示笔记数',
+            firstPage: '首',
+            lastPage: '末'
+        },
+        jp: {
+            viewNotes: 'メモ一覧',
+            exportNotes: 'エクスポート',
+            importNotes: 'インポート',
+            clearNotes: 'メモ一括削除',
+            notesList: 'メモ一覧',
+            searchNotes: '検索',
+            delete: '削除',
+            confirmClear: 'すべてのメモを削除しますか？ この操作は元に戻せません。',
+            notesCleared: 'すべてのメモが削除されました。',
+            importSuccess: 'メモがインポートされました！',
+            importError: 'インポートに失敗しました。ファイル形式が正しいか確認してください。',
+            settings: '設定',
+            language: '言語',
+            notesPerPage: 'ページごとのメモ数',
+            firstPage: '最初',
+            lastPage: '最後'
+        }
+    };
+
+    function openSettings() {
+        let settingsDiv = document.createElement("div");
+        settingsDiv.style.position = "fixed";
+        settingsDiv.style.top = "50%";
+        settingsDiv.style.left = "50%";
+        settingsDiv.style.transform = "translate(-50%, -50%)";
+        settingsDiv.style.backgroundColor = "#fff";
+        settingsDiv.style.padding = "30px";
+        settingsDiv.style.border = "1px solid #ccc";
+        settingsDiv.style.zIndex = "9999";
+
+        let header = document.createElement('h2');
+        header.textContent = languages[currentLanguage].settings;
+        header.style.textAlign = 'center';
+        header.style.fontFamily = 'Microsoft Yahei';
+        settingsDiv.appendChild(header);
+
+        let languageLabel = document.createElement('label');
+        languageLabel.textContent = languages[currentLanguage].language;
+        languageLabel.style.display = 'block';
+        languageLabel.style.marginBottom = '10px';
+        settingsDiv.appendChild(languageLabel);
+
+        let enRadio = document.createElement('input');
+        enRadio.type = 'radio';
+        enRadio.name = 'SkebMemoLang';
+        enRadio.value = 'en';
+        enRadio.id = 'enRadio';
+        if (currentLanguage === 'en') enRadio.checked = true;
+
+        let enLabel = document.createElement('label');
+        enLabel.textContent = 'English';
+        enLabel.style.marginRight = '10px';
+        enLabel.htmlFor = 'enRadio';
+
+        let cnRadio = document.createElement('input');
+        cnRadio.type = 'radio';
+        cnRadio.name = 'SkebMemoLang';
+        cnRadio.value = 'cn';
+        cnRadio.id = 'cnRadio';
+
+        let cnLabel = document.createElement('label');
+        cnLabel.textContent = '中文';
+        cnLabel.style.marginRight = '10px';
+        cnLabel.htmlFor = 'cnRadio';
+
+        let jpRadio = document.createElement('input');
+        jpRadio.type = 'radio';
+        jpRadio.name = 'SkebMemoLang';
+        jpRadio.value = 'jp';
+        jpRadio.id = 'jpRadio';
+
+        let jpLabel = document.createElement('label');
+        jpLabel.textContent = '日本語';
+        jpLabel.style.marginRight = '10px';
+        jpLabel.htmlFor = 'jpRadio';
+
+        settingsDiv.appendChild(enRadio);
+        settingsDiv.appendChild(enLabel);
+        settingsDiv.appendChild(cnRadio);
+        settingsDiv.appendChild(cnLabel);
+        settingsDiv.appendChild(jpRadio);
+        settingsDiv.appendChild(jpLabel);
+
+        let notesPerPageLabel = document.createElement('label');
+        notesPerPageLabel.textContent = languages[currentLanguage].notesPerPage;
+        notesPerPageLabel.style.display = 'block';
+        notesPerPageLabel.style.marginTop = '20px';
+        settingsDiv.appendChild(notesPerPageLabel);
+
+        let notesPerPageInput = document.createElement('input');
+        notesPerPageInput.type = 'number';
+        notesPerPageInput.value = notesPerPage;
+        notesPerPageInput.min = '1';
+        notesPerPageInput.style.width = '100%';
+        notesPerPageInput.style.marginBottom = '10px';
+        notesPerPageInput.style.marginRight = '10px';
+        settingsDiv.appendChild(notesPerPageInput);
+
+        let exportNotesButton = document.createElement('button');
+        exportNotesButton.textContent = languages[currentLanguage].exportNotes;
+        exportNotesButton.style.marginBottom = '10px';
+        exportNotesButton.style.marginRight = '10px';
+        exportNotesButton.style.fontFamily = 'Microsoft Yahei';
+        settingsDiv.appendChild(exportNotesButton);
+
+        let importNotesButton = document.createElement('button');
+        importNotesButton.textContent = languages[currentLanguage].importNotes;
+        importNotesButton.style.marginBottom = '10px';
+        importNotesButton.style.marginRight = '10px';
+        importNotesButton.style.fontFamily = 'Microsoft Yahei';
+        settingsDiv.appendChild(importNotesButton);
+
+        let clearNotesButton = document.createElement('button');
+        clearNotesButton.textContent = languages[currentLanguage].clearNotes;
+        clearNotesButton.style.marginBottom = '10px';
+        clearNotesButton.style.fontFamily = 'Microsoft Yahei';
+        settingsDiv.appendChild(clearNotesButton);
+
+        document.body.appendChild(settingsDiv);
+
+        exportNotesButton.addEventListener('click', handleExportNotes);
+        importNotesButton.addEventListener('click', handleImportNotes);
+
+        clearNotesButton.addEventListener('click', function () {
+            let confirmClear = confirm(languages[currentLanguage].confirmClear);
+            if (confirmClear) {
+                localStorage.removeItem('notes');
+                notes = {};
+                alert(languages[currentLanguage].notesCleared);
+            }
+        });
+
+        // container.appendChild(document.createElement("br"));
+
+        let closeButton = document.createElement("span");
+        closeButton.textContent = "×";
+        closeButton.style.position = "absolute";
+        closeButton.style.top = "5px";
+        closeButton.style.right = "5px";
+        closeButton.style.fontSize = "20px";
+        closeButton.style.cursor = "pointer";
+        closeButton.addEventListener("click", function () {
+            document.body.removeChild(settingsDiv);
+        });
+        settingsDiv.appendChild(closeButton);
+
+        cnRadio.addEventListener('change', function () {
+            localStorage.setItem('SkebMemoLang', 'cn');
+            // location.reload();
+        });
+
+        jpRadio.addEventListener('change', function () {
+            localStorage.setItem('SkebMemoLang', 'jp');
+            // location.reload();
+        });
+
+        enRadio.addEventListener('change', function () {
+            localStorage.setItem('SkebMemoLang', 'en');
+            // location.reload();
+        });
+
+        let savedLanguge = localStorage.getItem('SkebMemoLang');
+        if (savedLanguge === 'cn') {
+            cnRadio.checked = true;
+            currentLanguage = 'cn';
+        } else if (savedLanguge === 'jp') {
+            jpRadio.checked = true;
+            currentLanguage = 'jp';
+        } else {
+            enRadio.checked = true;
+            currentLanguage = 'en';
+        };
+
+        notesPerPageInput.addEventListener("input", function () {
+            localStorage.setItem("SkebMemoN", notesPerPageInput.value);
+        });
+    }
+
+    var notesPerPage = localStorage.getItem('SkebMemoN') || 10;
+    var currentLanguage = localStorage.getItem('SkebMemoLang') || 'en';
+
+    GM_registerMenuCommand(languages[currentLanguage].settings, openSettings);
+
     function note_func() {
-        var urlPath = window.location.pathname;
+        let urlPath = window.location.pathname;
 
         // Find user name
-        var segments = urlPath.split('/');
-        var pageID = segments.find(segment => segment.startsWith('@'));
+        let segments = urlPath.split('/');
+        let pageID = segments.find(segment => segment.startsWith('@'));
 
         if (!pageID) {
             console.warn('SkebMemo: Not a user page.');
@@ -24,33 +286,33 @@
         }
 
         // Initialize notes object
-        var notes = JSON.parse(localStorage.getItem('notes') || '{}');
+        let notes = JSON.parse(localStorage.getItem('notes') || '{}');
 
         // Find info box
-        var targetDiv = document.querySelector('.is-box');
+        let targetDiv = document.querySelector('.is-box');
         if (!targetDiv) {
             console.error('SkebMemo: .is-box not found.');
             return;
         }
 
-        var container = document.createElement('div');
+        let container = document.createElement('div');
 
         container.style.marginTop = '20px';
         targetDiv.parentNode.insertBefore(container, targetDiv.nextSibling);
 
         // Create text box
-        var textBox = document.createElement('textarea');
+        let textBox = document.createElement('textarea');
         textBox.id = 'myTextBox';
         textBox.style.width = '100%';
         textBox.style.height = '200px';
         textBox.style.marginBottom = '10px';
-        textBox.style.resize = 'vertical'; // 只能上下调整大小
+        textBox.style.resize = 'vertical';
         textBox.style.fontFamily = 'Microsoft Yahei';
         textBox.style.fontSize = '20px';
         container.appendChild(textBox);
 
-        var viewNotesButton = document.createElement('button');
-        viewNotesButton.textContent = '查看所有笔记';
+        let viewNotesButton = document.createElement('button');
+        viewNotesButton.textContent = languages[currentLanguage].viewNotes;;
         viewNotesButton.style.fontFamily = 'Microsoft Yahei';
         viewNotesButton.style.fontSize = '20px';
         viewNotesButton.style.marginBottom = '10px';
@@ -69,7 +331,7 @@
         //     notes[pageID] = textBox.value;
         //     localStorage.setItem('notes', JSON.stringify(notes));
         // });
-        textBox.addEventListener('input', function() {
+        textBox.addEventListener('input', function () {
             if (textBox.value.trim() === '') {
                 delete notes[pageID];
             } else {
@@ -79,8 +341,8 @@
         });
 
         // View all notes
-        viewNotesButton.addEventListener('click', function() {
-            var notesList = document.createElement('div');
+        viewNotesButton.addEventListener('click', function () {
+            let notesList = document.createElement('div');
             notesList.style.position = 'fixed';
             notesList.style.top = '50%';
             notesList.style.left = '50%';
@@ -96,13 +358,13 @@
             notesList.style.fontFamily = 'Microsoft Yahei';
             notesList.id = 'notesList';
 
-            var header = document.createElement('h2');
-            header.textContent = '笔记列表';
+            let header = document.createElement('h2');
+            header.textContent = languages[currentLanguage].notesList;
             header.style.textAlign = 'center';
             header.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(header);
 
-            var searchInput = document.createElement('input');
+            let searchInput = document.createElement('input');
             searchInput.type = 'text';
             searchInput.placeholder = '搜索笔记';
             searchInput.style.width = '100%';
@@ -112,52 +374,61 @@
             searchInput.style.padding = '5px';
             notesList.appendChild(searchInput);
 
-            var notesContainer = document.createElement('div');
+            let notesContainer = document.createElement('div');
             notesContainer.style.display = 'grid';
-            notesContainer.style.gridTemplateColumns = '1fr 3fr 1fr';
+            notesContainer.style.gridTemplateColumns = '3fr 12fr 1fr';
             notesContainer.style.gap = '10px';
             notesContainer.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(notesContainer);
 
+            let buttonContainer = document.createElement('div');
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.position = 'absolute';
+            buttonContainer.style.top = '10px';
+            buttonContainer.style.left = '10px';
+            notesList.appendChild(buttonContainer);
+
             // Export notes button
-            var exportNotesButton = document.createElement('button');
-            exportNotesButton.textContent = '导出笔记';
-            exportNotesButton.style.position = 'absolute';
-            exportNotesButton.style.top = '10px';
-            exportNotesButton.style.left = '10px';
+            let exportNotesButton = document.createElement('button');
+            exportNotesButton.textContent = languages[currentLanguage].exportNotes;
+            exportNotesButton.style.marginRight = '10px';
             exportNotesButton.style.fontFamily = 'Microsoft Yahei';
-            notesList.appendChild(exportNotesButton);
+            buttonContainer.appendChild(exportNotesButton);
 
             // Import notes button
-            var importNotesButton = document.createElement('button');
-            importNotesButton.textContent = '导入笔记';
-            importNotesButton.style.position = 'absolute';
-            importNotesButton.style.top = '10px';
-            importNotesButton.style.left = '100px';
+            let importNotesButton = document.createElement('button');
+            importNotesButton.textContent = languages[currentLanguage].importNotes;
+            importNotesButton.style.marginRight = '10px';
             importNotesButton.style.fontFamily = 'Microsoft Yahei';
-            notesList.appendChild(importNotesButton);
+            buttonContainer.appendChild(importNotesButton);
 
             // Remove all notes button
-            var clearNotesButton = document.createElement('button');
-            clearNotesButton.textContent = '清空笔记';
-            clearNotesButton.style.position = 'absolute';
-            clearNotesButton.style.top = '10px';
-            clearNotesButton.style.left = '190px';
+            let clearNotesButton = document.createElement('button');
+            clearNotesButton.textContent = languages[currentLanguage].clearNotes;
+            clearNotesButton.style.marginRight = '10px';
             clearNotesButton.style.fontFamily = 'Microsoft Yahei';
-            notesList.appendChild(clearNotesButton);
+            buttonContainer.appendChild(clearNotesButton);
 
-            var closeButton = document.createElement('button');
-            closeButton.textContent = 'X';
-            closeButton.style.position = 'absolute';
-            closeButton.style.top = '10px';
-            closeButton.style.right = '10px';
-            closeButton.style.fontFamily = 'Microsoft Yahei';
-            closeButton.addEventListener('click', function() {
+            // Setting button
+            let settingButton = document.createElement('button');
+            settingButton.textContent = languages[currentLanguage].settings;
+            settingButton.style.marginRight = '10px';
+            settingButton.style.fontFamily = 'Microsoft Yahei';
+            buttonContainer.appendChild(settingButton);
+
+            let closeButton = document.createElement("span");
+            closeButton.textContent = "×";
+            closeButton.style.position = "absolute";
+            closeButton.style.top = "5px";
+            closeButton.style.right = "15px";
+            closeButton.style.fontSize = "20px";
+            closeButton.style.cursor = "pointer";
+            closeButton.addEventListener('click', function () {
                 document.body.removeChild(notesList);
             });
             notesList.appendChild(closeButton);
 
-            var paginationContainer = document.createElement('div');
+            let paginationContainer = document.createElement('div');
             paginationContainer.style.display = 'flex';
             paginationContainer.style.justifyContent = 'center';
             paginationContainer.style.marginTop = '10px';
@@ -166,18 +437,16 @@
 
             document.body.appendChild(notesList);
 
-            var currentPage = 1;
-            var notesPerPage = 10;
-            var filteredNotes = Object.keys(notes).filter(id => notes[id].includes(''));
-            // var filteredNotes = Object.keys(notes).filter(id => notes[id].includes('')).reverse();
-            var maxVisiblePages = 7;
+            let currentPage = 1;
+            let filteredNotes = Object.keys(notes).filter(id => notes[id].includes(''));
+            let maxVisiblePages = 7;
 
             function renderNotes(filter = '') {
                 notesContainer.innerHTML = '';
                 paginationContainer.innerHTML = '';
                 filteredNotes = Object.keys(notes).filter(id => notes[id].includes(filter));
-                var totalPages = Math.ceil(filteredNotes.length / notesPerPage);
-            
+                let totalPages = Math.ceil(filteredNotes.length / notesPerPage);
+
                 function createPageButton(page, text) {
                     let pageButton = document.createElement('button');
                     pageButton.textContent = text;
@@ -188,48 +457,48 @@
                         pageButton.disabled = true;
                         pageButton.style.fontWeight = 'bold';
                     } else {
-                        pageButton.addEventListener('click', function() {
+                        pageButton.addEventListener('click', function () {
                             currentPage = page;
                             renderNotes(filter);
                         });
                     }
                     paginationContainer.appendChild(pageButton);
                 }
-            
+
                 if (totalPages > 1) {
-                    createPageButton(1, '首');
-            
+                    createPageButton(1, languages[currentLanguage].firstPage);
+
                     if (currentPage > 1) {
                         createPageButton(currentPage - 1, '<');
                     }
-            
+
                     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
                     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
+
                     if (endPage - startPage + 1 < maxVisiblePages) {
                         startPage = Math.max(1, endPage - maxVisiblePages + 1);
                     }
-            
+
                     for (let i = startPage; i <= endPage; i++) {
                         createPageButton(i, i);
                     }
-            
+
                     if (currentPage < totalPages) {
                         createPageButton(currentPage + 1, '>');
                     }
-            
-                    createPageButton(totalPages, '末');
+
+                    createPageButton(totalPages, languages[currentLanguage].lastPage);
                 }
-            
-                var start = (currentPage - 1) * notesPerPage;
-                var end = start + notesPerPage;
-                var notesToDisplay = filteredNotes.slice(start, end).reverse(); // Sort notes from newest to oldest
-            
-                for (var id of notesToDisplay) {
-                    var noteItem = document.createElement('div');
+
+                let start = (currentPage - 1) * notesPerPage;
+                let end = start + notesPerPage;
+                let notesToDisplay = filteredNotes.slice(start, end).reverse(); // Sort notes from newest to oldest
+
+                for (let id of notesToDisplay) {
+                    let noteItem = document.createElement('div');
                     noteItem.style.display = 'contents';
-            
-                    var noteID = document.createElement('a');
+
+                    let noteID = document.createElement('a');
                     noteID.href = `https://skeb.jp/${id}`;
                     noteID.textContent = id;
                     noteID.target = '_blank';
@@ -237,93 +506,79 @@
                     noteID.style.color = 'blue';
                     noteID.style.fontFamily = 'Microsoft Yahei';
                     notesContainer.appendChild(noteID);
-            
-                    var noteText = document.createElement('div');
+
+                    let noteText = document.createElement('div');
                     noteText.textContent = notes[id];
                     noteText.style.fontFamily = 'Microsoft Yahei';
                     notesContainer.appendChild(noteText);
-            
-                    var deleteButton = document.createElement('button');
-                    deleteButton.textContent = '删除';
+
+                    let deleteButton = document.createElement('button');
+                    deleteButton.textContent = languages[currentLanguage].delete;
                     deleteButton.style.marginLeft = '10px';
                     deleteButton.style.float = 'right';
                     deleteButton.style.fontFamily = 'Microsoft Yahei';
                     deleteButton.style.padding = '1px 1px';
                     deleteButton.style.fontWeight = 'bold';
-                    deleteButton.addEventListener('click', function(id) {
-                        return function() {
+                    deleteButton.style.alignSelf = 'center'
+                    deleteButton.addEventListener('click', function (id) {
+                        return function () {
                             delete notes[id];
                             localStorage.setItem('notes', JSON.stringify(notes));
                             renderNotes(filter);
                         };
                     }(id));
                     notesContainer.appendChild(deleteButton);
-
-                    // Add a horizontal rule between notes
-                    // var hr = document.createElement('hr');
-                    // hr.style.width = '100%';
-                    // hr.style.border = 'none';
-                    // hr.style.borderTop = '1px solid #ccc';
-                    // hr.style.margin = '10px 0';
-                    // notesContainer.appendChild(hr);
                 }
             }
 
-            searchInput.addEventListener('input', function() {
+            searchInput.addEventListener('input', function () {
                 currentPage = 1;
                 renderNotes(searchInput.value);
             });
 
             renderNotes();
 
-            exportNotesButton.addEventListener('click', function() {
-                var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes, null, 2));
-                var downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", "notes.json");
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
-            });
-
-            function handleImportNotes() {
-                var input = document.createElement('input');
+            exportNotesButton.addEventListener('click', handleExportNotes);
+            importNotesButton.addEventListener('click', function () {
+                let input = document.createElement('input');
                 input.type = 'file';
                 input.accept = '.json';
                 input.style.display = 'none';
-                input.addEventListener('change', function(event) {
-                    var file = event.target.files[0];
+                input.addEventListener('change', function (event) {
+                    let file = event.target.files[0];
                     if (file) {
-                        var reader = new FileReader();
-                        reader.onload = function(e) {
+                        let reader = new FileReader();
+                        reader.onload = function (e) {
                             try {
-                                var importedNotes = JSON.parse(e.target.result);
+                                let importedNotes = JSON.parse(e.target.result);
                                 // Merge imported notes with existing notes
                                 notes = { ...notes, ...importedNotes };
                                 localStorage.setItem('notes', JSON.stringify(notes));
-                                alert('笔记导入成功！');
+                                alert(languages[currentLanguage].importSuccess);
+                                // notes = JSON.parse(localStorage.getItem('notes') || '{}');
+                                document.body.removeChild(notesList);
+                                viewNotesButton.click();
                             } catch (error) {
                                 console.error('SkebMemo: Error parsing imported JSON.', error);
-                                alert('导入失败，请检查文件格式是否正确。');
+                                alert(languages[currentLanguage].importError);
                             }
                         };
                         reader.readAsText(file);
                     }
                 });
                 input.click();
-            }
-
-            importNotesButton.addEventListener('click', handleImportNotes);
-
-            clearNotesButton.addEventListener('click', function() {
-                var confirmClear = confirm('确定要清空所有笔记吗？此操作不可恢复。');
+            });
+            clearNotesButton.addEventListener('click', function () {
+                let confirmClear = confirm(languages[currentLanguage].confirmClear);
                 if (confirmClear) {
                     localStorage.removeItem('notes');
                     notes = {};
-                    alert('所有笔记已清空。');
+                    alert(languages[currentLanguage].notesCleared);
                     document.body.removeChild(notesList);
+                    viewNotesButton.click();
                 }
             });
+            settingButton.addEventListener('click', openSettings);
         });
     }
 

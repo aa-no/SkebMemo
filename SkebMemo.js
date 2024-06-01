@@ -309,7 +309,7 @@
             console.error('SkebMemo: .is-box not found.');
             return;
         }
-        
+
         // let divbox = document.createElement('div');
         // divbox.className = 'is-box';
         let container = document.createElement('div');
@@ -626,11 +626,7 @@
     function add_observer() {
         let body = document.body;
         let observer = new MutationObserver(mutations => {
-            let targetDiv = document.querySelector('.is-box');
-            if (targetDiv) {
-                observer.disconnect();
-                note_func();
-            }
+           note_func();
         });
         observer.observe(body, { childList: true, subtree: true });
     }

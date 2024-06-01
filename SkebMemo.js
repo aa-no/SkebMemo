@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
@@ -286,6 +286,9 @@
     GM_registerMenuCommand(languages[currentLanguage].settings, openSettings);
 
     function note_func() {
+        if (document.querySelector('.memobox')) {
+            return;
+        }
         let urlPath = window.location.pathname;
 
         // Find user name
@@ -312,6 +315,7 @@
         let container = document.createElement('div');
         container.style.marginTop = '20px';
         container.className = 'is-box';
+        container.classList.add('memobox');
 
         // divbox.appendChild(container);
         targetDiv.parentNode.insertBefore(container, targetDiv.nextSibling);

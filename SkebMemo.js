@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
@@ -57,10 +57,10 @@
 
     const languages = {
         en: {
-            viewNotes: 'Show Notes',
-            exportNotes: 'Export Notes',
-            importNotes: 'Import Notes',
-            clearNotes: 'Remove All Notes',
+            viewNotes: 'Show All Notes',
+            exportNotes: 'Export',
+            importNotes: 'Import',
+            clearNotes: 'Remove All',
             notesList: 'Notes List',
             searchNotes: 'Search Notes',
             delete: 'Delete',
@@ -70,7 +70,7 @@
             importError: 'Import failed, please check if the file format is correct.',
             settings: 'Settings',
             language: 'Language',
-            notesPerPage: 'Notes per Page',
+            notesPerPage: 'Notes per page',
             firstPage: 'First',
             lastPage: 'Last',
         },
@@ -551,6 +551,7 @@
                     let noteText = document.createElement('div');
                     noteText.textContent = notes[id];
                     noteText.style.fontFamily = fontCJE;
+                    noteText.style.whiteSpace = 'pre-wrap';
                     notesContainer.appendChild(noteText);
 
                     let deleteButton = document.createElement('button');

@@ -129,6 +129,24 @@
             exportNotesButton.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(exportNotesButton);
 
+            // 在导出笔记按钮旁边添加导入笔记按钮
+            var importNotesButton = document.createElement('button');
+            importNotesButton.textContent = '导入笔记';
+            importNotesButton.style.position = 'absolute';
+            importNotesButton.style.top = '10px';
+            importNotesButton.style.left = '100px';
+            importNotesButton.style.fontFamily = 'Microsoft Yahei';
+            notesList.appendChild(importNotesButton);
+
+            // 在导入笔记按钮旁边添加清空笔记按钮
+            var clearNotesButton = document.createElement('button');
+            clearNotesButton.textContent = '清空笔记';
+            clearNotesButton.style.position = 'absolute';
+            clearNotesButton.style.top = '10px';
+            clearNotesButton.style.left = '190px';
+            clearNotesButton.style.fontFamily = 'Microsoft Yahei';
+            notesList.appendChild(clearNotesButton);
+
             var closeButton = document.createElement('button');
             closeButton.textContent = 'X';
             closeButton.style.position = 'absolute';
@@ -267,6 +285,45 @@
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
+            });
+
+            function handleImportNotes() {
+                var input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.style.display = 'none';
+                input.addEventListener('change', function(event) {
+                    var file = event.target.files[0];
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function(e) {
+                            try {
+                                var importedNotes = JSON.parse(e.target.result);
+                                // 合并导入的笔记与现有的笔记
+                                notes = { ...notes, ...importedNotes };
+                                localStorage.setItem('notes', JSON.stringify(notes));
+                                alert('笔记导入成功！');
+                            } catch (error) {
+                                console.error('SkebMemo: Error parsing imported JSON.', error);
+                                alert('导入失败，请检查文件格式是否正确。');
+                            }
+                        };
+                        reader.readAsText(file);
+                    }
+                });
+                input.click();
+            }
+
+            importNotesButton.addEventListener('click', handleImportNotes);
+
+            clearNotesButton.addEventListener('click', function() {
+                var confirmClear = confirm('确定要清空所有笔记吗？此操作不可恢复。');
+                if (confirmClear) {
+                    localStorage.removeItem('notes');
+                    notes = {};
+                    alert('所有笔记已清空。');
+                    document.body.removeChild(notesList);
+                }
             });
         });
     }

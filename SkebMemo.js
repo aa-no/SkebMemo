@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=skeb.jp
 // @grant        GM_registerMenuCommand
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/496711/SkebMemo.user.js
+// @updateURL https://update.greasyfork.org/scripts/496711/SkebMemo.meta.js
 // ==/UserScript==
 
 (function () {
@@ -193,7 +195,7 @@
 
         let notesPerPageInput = document.createElement('input');
         notesPerPageInput.type = 'number';
-        notesPerPageInput.value = notesPerPage || 10;
+        notesPerPageInput.value = notesPerPage || '10';
         notesPerPageInput.min = '1';
         notesPerPageInput.style.width = '100%';
         notesPerPageInput.style.marginBottom = '10px';
@@ -280,7 +282,7 @@
         });
     }
 
-    var notesPerPage = localStorage.getItem('SkebMemoN') || 10;
+    var notesPerPage = parseInt(localStorage.getItem('SkebMemoN')) || 10;
     var currentLanguage = localStorage.getItem('SkebMemoLang') || 'en';
 
     GM_registerMenuCommand(languages[currentLanguage].settings, openSettings);

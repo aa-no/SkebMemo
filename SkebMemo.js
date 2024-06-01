@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.2
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*
@@ -75,7 +75,7 @@
             notesPerPage: 'Notes per page',
             firstPage: 'First',
             lastPage: 'Last',
-            boxComment: 'The memo will be saved for this illustrator.'
+            boxComment: 'The memo will be saved for this work.'
         },
         cn: {
             viewNotes: '查看所有笔记',
@@ -94,7 +94,7 @@
             notesPerPage: '每页显示笔记数',
             firstPage: '首',
             lastPage: '末',
-            boxComment: '笔记内容将为此画师保存。'
+            boxComment: '笔记内容将为此稿件保存。'
         },
         jp: {
             viewNotes: 'メモ一覧',
@@ -113,7 +113,7 @@
             notesPerPage: 'ページごとのメモ数',
             firstPage: '最初',
             lastPage: '最後',
-            boxComment: 'このメモはイラストレーターに保存されます。'
+            boxComment: 'このメモはイラストに保存されます。'
         }
     };
 
@@ -297,23 +297,24 @@
 
         // Find user name
         let segments = urlPath.split('/');
-        let pageID = segments.find(segment => segment.startsWith('@'));
+        let pageID = ''
+        let authorID = segments.find(segment => segment.startsWith('@'));
+        if (!authorID) {
+            console.warn('SkebMemo: Not a user page or work page.');
+            return;
+        } else {
+            pageID = authorID;
+        }
+
+        if (window.location.pathname.includes('/works/')) {
+            pageID = authorID + '/works/' + segments[3];
+        }
 
         let nickname = '';
         setTimeout(function() {
             try {
-                // if (document.title.includes(' | Skeb') && document.title.includes('by ')) {
-                //     nickname = document.title.split('by ')[1].split(' | Skeb')[0].trim();
-                // } else {
-                //     if (document.title.includes(' (@')) {
-                //         nickname = document.title.split(' (@')[0].trim();
-                //     } else {
-                //         console.log(document.title)
-                //         console.log(document.querySelector('.title.is-5'))
-                //     }
-                // }
                 if (window.location.pathname.includes('/works/')) {
-                    nickname = document.querySelector('.title.is-5').textContent.trim();
+                    nickname = document.querySelector('.title.is-5').textContent.trim() + '/' + segments[3];
                 } else {
                     nickname = document.querySelector('.title.is-4').textContent.trim();
                 }
@@ -322,11 +323,6 @@
                 nickname = '';
             }
         }, 100);
-    
-        if (!pageID) {
-            console.warn('SkebMemo: Not a user page.');
-            return;
-        }
 
         // Initialize notes object
         let notes = JSON.parse(localStorage.getItem('notes') || '{}');
@@ -597,10 +593,10 @@
                     notesContainer.appendChild(noteID);
 
                     let noteName = document.createElement('a');
-                    // noteName.href = `https://skeb.jp/${id}`;
+                    noteName.href = `https://skeb.jp/${id}`;
                     noteName.textContent = notes[id].name;
-                    // noteName.target = '_blank';
-                    // noteName.style.textDecoration = 'none';
+                    noteName.target = '_blank';
+                    noteName.style.textDecoration = 'none';
                     noteName.style.fontFamily = fontCJE;
                     notesContainer.appendChild(noteName);
 

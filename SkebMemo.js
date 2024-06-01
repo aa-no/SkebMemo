@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SkebMemo
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.3
 // @description  Save memo for user at skeb.jp.
 // @author       A. A.
 // @match        *://skeb.jp/*

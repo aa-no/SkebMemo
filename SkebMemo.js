@@ -14,7 +14,7 @@
     function note_func() {
         var urlPath = window.location.pathname;
 
-        // 分割URL路径，并查找以"@"开头的部分
+        // Find user name
         var segments = urlPath.split('/');
         var pageID = segments.find(segment => segment.startsWith('@'));
 
@@ -23,23 +23,22 @@
             return;
         }
 
-        // 初始化笔记存储
+        // Initialize notes object
         var notes = JSON.parse(localStorage.getItem('notes') || '{}');
 
-        // 找到页面中的第一个<div class="is-box">元素
+        // Find info box
         var targetDiv = document.querySelector('.is-box');
         if (!targetDiv) {
             console.error('SkebMemo: .is-box not found.');
             return;
         }
 
-        // 创建一个容器来嵌入文本框和按钮
         var container = document.createElement('div');
 
         container.style.marginTop = '20px';
         targetDiv.parentNode.insertBefore(container, targetDiv.nextSibling);
 
-        // 创建文本框元素
+        // Create text box
         var textBox = document.createElement('textarea');
         textBox.id = 'myTextBox';
         textBox.style.width = '100%';
@@ -50,7 +49,6 @@
         textBox.style.fontSize = '20px';
         container.appendChild(textBox);
 
-        // 创建查看笔记按钮
         var viewNotesButton = document.createElement('button');
         viewNotesButton.textContent = '查看所有笔记';
         viewNotesButton.style.fontFamily = 'Microsoft Yahei';
@@ -58,15 +56,15 @@
         viewNotesButton.style.marginBottom = '10px';
         container.appendChild(viewNotesButton);
 
-        // 使用 flexbox 布局
+        // Use flexbox to align items
         container.style.display = 'flex';
         container.style.flexDirection = 'column'; // 设置为列布局
         container.style.alignItems = 'flex-end'; // 将子元素对齐到右边
 
-        // 加载保存的内容
+        // Load notes from local storage
         textBox.value = notes[pageID] || '';
 
-        // 监听文本框内容变化并保存
+        // Save notes to local storage
         // textBox.addEventListener('input', function() {
         //     notes[pageID] = textBox.value;
         //     localStorage.setItem('notes', JSON.stringify(notes));
@@ -80,7 +78,7 @@
             localStorage.setItem('notes', JSON.stringify(notes));
         });
 
-        // 查看所有笔记功能
+        // View all notes
         viewNotesButton.addEventListener('click', function() {
             var notesList = document.createElement('div');
             notesList.style.position = 'fixed';
@@ -110,8 +108,8 @@
             searchInput.style.width = '100%';
             searchInput.style.marginBottom = '10px';
             searchInput.style.fontFamily = 'Microsoft Yahei';
-            searchInput.style.border = '1px solid #ccc'; // 添加边框样式
-            searchInput.style.padding = '5px'; // 添加内边距以增强可视性
+            searchInput.style.border = '1px solid #ccc';
+            searchInput.style.padding = '5px';
             notesList.appendChild(searchInput);
 
             var notesContainer = document.createElement('div');
@@ -121,6 +119,7 @@
             notesContainer.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(notesContainer);
 
+            // Export notes button
             var exportNotesButton = document.createElement('button');
             exportNotesButton.textContent = '导出笔记';
             exportNotesButton.style.position = 'absolute';
@@ -129,7 +128,7 @@
             exportNotesButton.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(exportNotesButton);
 
-            // 在导出笔记按钮旁边添加导入笔记按钮
+            // Import notes button
             var importNotesButton = document.createElement('button');
             importNotesButton.textContent = '导入笔记';
             importNotesButton.style.position = 'absolute';
@@ -138,7 +137,7 @@
             importNotesButton.style.fontFamily = 'Microsoft Yahei';
             notesList.appendChild(importNotesButton);
 
-            // 在导入笔记按钮旁边添加清空笔记按钮
+            // Remove all notes button
             var clearNotesButton = document.createElement('button');
             clearNotesButton.textContent = '清空笔记';
             clearNotesButton.style.position = 'absolute';
@@ -184,7 +183,7 @@
                     pageButton.textContent = text;
                     pageButton.style.margin = '0 5px';
                     pageButton.style.fontFamily = 'Microsoft Yahei';
-                    pageButton.style.border = 'none'; // 移除边框
+                    pageButton.style.border = 'none'; // Remove border
                     if (page === currentPage) {
                         pageButton.disabled = true;
                         pageButton.style.fontWeight = 'bold';
@@ -198,7 +197,7 @@
                 }
             
                 if (totalPages > 1) {
-                    createPageButton(1, '首'); // 添加首页按钮
+                    createPageButton(1, '首');
             
                     if (currentPage > 1) {
                         createPageButton(currentPage - 1, '<');
@@ -219,12 +218,12 @@
                         createPageButton(currentPage + 1, '>');
                     }
             
-                    createPageButton(totalPages, '末'); // 添加最后一页按钮
+                    createPageButton(totalPages, '末');
                 }
             
                 var start = (currentPage - 1) * notesPerPage;
                 var end = start + notesPerPage;
-                var notesToDisplay = filteredNotes.slice(start, end).reverse(); // 倒序显示笔记
+                var notesToDisplay = filteredNotes.slice(start, end).reverse(); // Sort notes from newest to oldest
             
                 for (var id of notesToDisplay) {
                     var noteItem = document.createElement('div');
@@ -249,8 +248,8 @@
                     deleteButton.style.marginLeft = '10px';
                     deleteButton.style.float = 'right';
                     deleteButton.style.fontFamily = 'Microsoft Yahei';
-                    deleteButton.style.padding = '1px 1px'; // 调整按钮的左右宽度
-                    deleteButton.style.fontWeight = 'bold'; // 加粗按钮文字
+                    deleteButton.style.padding = '1px 1px';
+                    deleteButton.style.fontWeight = 'bold';
                     deleteButton.addEventListener('click', function(id) {
                         return function() {
                             delete notes[id];
@@ -260,12 +259,12 @@
                     }(id));
                     notesContainer.appendChild(deleteButton);
 
-                    // 添加分割线
+                    // Add a horizontal rule between notes
                     // var hr = document.createElement('hr');
                     // hr.style.width = '100%';
                     // hr.style.border = 'none';
-                    // hr.style.borderTop = '1px solid #ccc'; // 设置分割线样式
-                    // hr.style.margin = '10px 0'; // 设置上下间距
+                    // hr.style.borderTop = '1px solid #ccc';
+                    // hr.style.margin = '10px 0';
                     // notesContainer.appendChild(hr);
                 }
             }
@@ -299,7 +298,7 @@
                         reader.onload = function(e) {
                             try {
                                 var importedNotes = JSON.parse(e.target.result);
-                                // 合并导入的笔记与现有的笔记
+                                // Merge imported notes with existing notes
                                 notes = { ...notes, ...importedNotes };
                                 localStorage.setItem('notes', JSON.stringify(notes));
                                 alert('笔记导入成功！');
@@ -333,7 +332,7 @@
         let observer = new MutationObserver(mutations => {
             let targetDiv = document.querySelector('.is-box');
             if (targetDiv) {
-                observer.disconnect(); // 停止观察
+                observer.disconnect();
                 note_func();
             }
         });
